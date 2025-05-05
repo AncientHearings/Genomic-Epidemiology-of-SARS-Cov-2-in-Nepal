@@ -1,0 +1,34 @@
+import pandas as pd
+
+#Loading the TSV file
+df = pd.read_csv("/home/himanshu/combined_snpEff.tsv", sep='\t', dtype = {17:str})
+
+#Creating a dataframe that includes information for S gene only.
+df_spike  = df[df['GENE'] == 'S']
+
+#Dropping all the rows with null values under HGVS_C column
+df_spike = df_spike.dropna(subset=['HGVS_C'])
+
+#Dropping all the rows with insertion or/and deletion under HGVS_C column and include substitution mutations only'
+df_spike = df_spike[
+   df_spike['HGVS_C'].str.contains(r'>', na=False) &   ~df_spike['HGVS_C'].str.contains('ins|del', case = False, na = False) 
+ ]  
+
+#Counting the number of frequency across all tr=he samples
+mutation_freq = (
+    df_spike.groupby(['GENE', 'HGVS_C'])['Accession_ID']
+    .nunique()
+    .reset_index(name='Frequency')
+)
+
+#Renaming  the HGVS_C column as  frequency and sorting the frequency column  in descending order.
+
+mutation_freq.rename(columns={'HGVS_C': 'Mutation'}, inplace=True)
+mutation_freq.sort_values(by='Frequency', ascending=False, inplace=True)
+
+#Saving the frequency table as TSV file
+output_path = "mutation_frequency_table_S.tsv"
+mutation_freq.to_csv(output_path, sep='\t', index=False)
+
+output_path
+
